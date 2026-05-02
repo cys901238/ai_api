@@ -1,22 +1,22 @@
-# Standalone OpenAI ping handler deployment
+# 독립형 OpenAI 핑 핸들러 배포
 
-## Scope
-- No production planning UI changes
-- Standalone backend ping endpoint only
-- Keep all environment identifiers as placeholders until deployment
+## 범위
+- 생산계획 UI는 변경하지 않음
+- 독립형 백엔드 핑 엔드포인트만 대상
+- 배포 전까지 모든 환경 식별자는 플레이스홀더로 유지
 
-## Handler contract
-### Supported methods
+## 핸들러 계약
+### 지원 메서드
 - `GET`
 - `POST`
 - `OPTIONS`
 
-### Example request
+### 요청 예시
 ```http
 GET /sap/bc/zpp_openai_ping?sap-client=<client>
 ```
 
-### Success response example
+### 성공 응답 예시
 ```json
 {
   "ok": true,
@@ -33,7 +33,7 @@ GET /sap/bc/zpp_openai_ping?sap-client=<client>
 }
 ```
 
-### Failure response example
+### 실패 응답 예시
 ```json
 {
   "ok": false,
@@ -42,32 +42,32 @@ GET /sap/bc/zpp_openai_ping?sap-client=<client>
 }
 ```
 
-## ADT deployment steps
-1. Open ADT against the target SAP system and client.
-2. Create ABAP class `ZCL_PP_OPENAI_PING` in the chosen package.
-3. Assign the correct transport request for your environment.
-4. Add interface `IF_HTTP_EXTENSION`.
-5. Use your local implementation source for the class body.
-6. Activate the class and verify syntax.
-7. Replace placeholder API key logic with secure retrieval.
+## ADT 배포 절차
+1. 대상 SAP 시스템과 클라이언트에 연결된 ADT를 엽니다.
+2. 선택한 패키지에 ABAP 클래스 `ZCL_PP_OPENAI_PING`를 생성합니다.
+3. 환경에 맞는 올바른 트랜스포트 요청을 지정합니다.
+4. 인터페이스 `IF_HTTP_EXTENSION`를 추가합니다.
+5. 클래스 본문에는 로컬 구현 소스를 반영합니다.
+6. 클래스를 활성화하고 문법 오류가 없는지 확인합니다.
+7. API 키 처리 로직은 안전한 조회 방식으로 교체합니다.
 
-## SICF deployment steps
-1. Open transaction `SICF`.
-2. Go to `default_host -> sap -> bc`.
-3. Create service `zpp_openai_ping`.
-4. Assign handler class `ZCL_PP_OPENAI_PING`.
-5. Keep it as a normal HTTP service, not BSP.
-6. Apply local authentication and authorization policy.
-7. Activate the service.
-8. Test the endpoint in browser or REST client.
+## SICF 배포 절차
+1. 트랜잭션 `SICF`를 엽니다.
+2. `default_host -> sap -> bc`로 이동합니다.
+3. 서비스 `zpp_openai_ping`를 생성합니다.
+4. 핸들러 클래스로 `ZCL_PP_OPENAI_PING`를 지정합니다.
+5. BSP가 아닌 일반 HTTP 서비스로 유지합니다.
+6. 로컬 인증 및 권한 정책을 적용합니다.
+7. 서비스를 활성화합니다.
+8. 브라우저나 REST 클라이언트에서 엔드포인트를 테스트합니다.
 
-## Validation checklist
-- Class activates successfully
-- SICF node is active
-- `GET` returns JSON
-- Missing key returns controlled `500` JSON
-- Valid key returns upstream OpenAI status and response body
+## 검증 체크리스트
+- 클래스가 정상적으로 활성화됨
+- SICF 노드가 활성 상태임
+- `GET` 요청이 JSON을 반환함
+- API 키가 없을 때 제어된 `500` JSON을 반환함
+- 유효한 키가 있을 때 OpenAI 상위 응답 상태와 본문을 반환함
 
-## Notes
-- The outbound call is a minimal probe such as `GET https://api.openai.com/v1/models`.
-- This is a connectivity check, not business logic integration.
+## 참고
+- 외부 호출은 `GET https://api.openai.com/v1/models` 같은 최소 수준의 프로브로 충분합니다.
+- 이 문서는 비즈니스 로직 연동이 아니라 연결성 점검을 위한 배포 가이드입니다.
