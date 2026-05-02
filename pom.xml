@@ -40,12 +40,6 @@
             <artifactId>jackson-databind</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.sap.conn.jco</groupId>
-            <artifactId>sapjco3</artifactId>
-            <version>3.1.12</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>com.openai</groupId>
             <artifactId>openai-java</artifactId>
             <version>1.6.0</version>
@@ -74,4 +68,18 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>with-sapjco</id>
+            <dependencies>
+                <dependency>
+                    <groupId>com.sap.conn.jco</groupId>
+                    <artifactId>sapjco3</artifactId>
+                    <version>3.1.12</version>
+                    <scope>provided</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 </project>

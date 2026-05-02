@@ -4,7 +4,7 @@
 
 ## 포함된 내용
 - RFC에서 OpenAI까지 이어지는 아키텍처 노트
-- IS6 `ZPP_GET_WORKING_DAY_AI`용 secret-safe 계약 초안과 프롬프트/응답 매핑 코드
+- IS6 `ZPP_GET_WORKING_DAY_AI`용 secret-safe 계약 초안, Spring 서비스, JCo 핸들러 흐름
 - 최소 구성의 Spring Boot + Maven 미들웨어 스켈레톤
 - 구조화된 OpenAI 응답용 JSON 스키마
 - 독립형 SAP HTTP 핑 엔드포인트를 위한 정제된 배포 메모
@@ -26,7 +26,8 @@
 2. 승인된 내부 절차에 따라 SAP JCo 라이브러리를 준비합니다.
 3. `src/main/resources/application.example.yml`을 로컬 실행용 설정 파일로 복사합니다.
 4. SAP 게이트웨이와 OpenAI 설정의 플레이스홀더 값을 실제 환경에 맞게 채웁니다.
-5. OpenAI 클라이언트와 JCo 서버 연동 코드를 구현합니다.
+5. 기본 빌드는 proprietary `sapjco3` 없이 동작합니다. 내부 환경에서 실제 JCo 연동이 필요하면 `-Pwith-sapjco` 프로필로 빌드합니다.
+6. `ZppGetWorkingDayAiFunctionHandler`를 실제 JCo 서버 콜백에서 호출하고, `WorkingDayAiPort` 구현체를 내부 OpenAI 어댑터로 교체합니다.
 
 ## 참고
 - `docs/IS6_ZPP_GET_WORKING_DAY_AI.md`에 IS6 근무일 판단 RFC 초안을 정리했습니다.

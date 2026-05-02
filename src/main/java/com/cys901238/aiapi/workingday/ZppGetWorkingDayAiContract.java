@@ -25,6 +25,8 @@ public final class ZppGetWorkingDayAiContract {
         "EV_CONFIDENCE"
     );
 
+    public static final String RETURN_TABLE_NAME = "ET_RETURN";
+
     public static final List<String> RETURN_TABLE_COLUMNS = List.of(
         "TYPE",
         "ID",

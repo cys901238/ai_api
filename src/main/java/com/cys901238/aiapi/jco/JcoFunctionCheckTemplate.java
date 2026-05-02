@@ -1,92 +1,130 @@
 package com.cys901238.aiapi.jco;
 
-import com.sap.conn.jco.JCoDestination;
-import com.sap.conn.jco.JCoDestinationManager;
-import com.sap.conn.jco.JCoField;
-import com.sap.conn.jco.JCoFunction;
-import com.sap.conn.jco.JCoMetaData;
-import com.sap.conn.jco.JCoParameterList;
-import com.sap.conn.jco.JCoRepository;
-import com.sap.conn.jco.JCoTable;
-import com.sap.conn.jco.ext.DestinationDataEventListener;
-import com.sap.conn.jco.ext.DestinationDataProvider;
-import com.sap.conn.jco.ext.Environment;
+import java.lang.reflect.Array;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Properties;
 
 public class JcoFunctionCheckTemplate {
     public static void main(String[] args) {
         String functionName = args.length > 0 ? args[0] : "YOUR_FUNCTION_NAME";
         Properties properties = new Properties();
-        properties.setProperty(DestinationDataProvider.JCO_ASHOST, "YOUR_SAP_HOST");
-        properties.setProperty(DestinationDataProvider.JCO_SYSNR, "00");
-        properties.setProperty(DestinationDataProvider.JCO_CLIENT, "000");
-        properties.setProperty(DestinationDataProvider.JCO_USER, "YOUR_USER");
-        properties.setProperty(DestinationDataProvider.JCO_PASSWD, "YOUR_PASSWORD");
-        properties.setProperty(DestinationDataProvider.JCO_LANG, "EN");
-        properties.setProperty(DestinationDataProvider.JCO_PEAK_LIMIT, "2");
-        properties.setProperty(DestinationDataProvider.JCO_POOL_CAPACITY, "1");
+        properties.setProperty("jco.client.ashost", "YOUR_SAP_HOST");
+        properties.setProperty("jco.client.sysnr", "00");
+        properties.setProperty("jco.client.client", "000");
+        properties.setProperty("jco.client.user", "YOUR_USER");
+        properties.setProperty("jco.client.passwd", "YOUR_PASSWORD");
+        properties.setProperty("jco.client.lang", "EN");
+        properties.setProperty("jco.destination.peak_limit", "2");
+        properties.setProperty("jco.destination.pool_capacity", "1");
 
         try {
-            new InMemoryDestinationDataProvider("TMP_DEST", properties);
-            JCoDestination destination = JCoDestinationManager.getDestination("TMP_DEST");
-            destination.ping();
+            Class<?> destinationDataProvider = Class.forName("com.sap.conn.jco.ext.DestinationDataProvider");
+            Class<?> environment = Class.forName("com.sap.conn.jco.ext.Environment");
+            new InMemoryDestinationDataProvider(destinationDataProvider, environment, "TMP_DEST", properties);
+
+            Class<?> destinationManager = Class.forName("com.sap.conn.jco.JCoDestinationManager");
+            Object destination = destinationManager.getMethod("getDestination", String.class).invoke(null, "TMP_DEST");
+            destination.getClass().getMethod("ping").invoke(destination);
             System.out.println("PING_OK");
-            JCoRepository repository = destination.getRepository();
-            JCoFunction function = repository.getFunction(functionName);
+
+            Object repository = destination.getClass().getMethod("getRepository").invoke(destination);
+            Object function = repository.getClass().getMethod("getFunction", String.class).invoke(repository, functionName);
             if (function == null) {
                 System.out.println("FUNCTION_NULL");
                 return;
             }
-            dumpList("IMPORT", function.getImportParameterList());
-            dumpList("EXPORT", function.getExportParameterList());
-            dumpList("CHANGING", function.getChangingParameterList());
-            dumpList("TABLE", function.getTableParameterList());
+
+            dumpList("IMPORT", function.getClass().getMethod("getImportParameterList").invoke(function));
+            dumpList("EXPORT", function.getClass().getMethod("getExportParameterList").invoke(function));
+            dumpList("CHANGING", function.getClass().getMethod("getChangingParameterList").invoke(function));
+            dumpList("TABLE", function.getClass().getMethod("getTableParameterList").invoke(function));
         } catch (Throwable e) {
             e.printStackTrace(System.out);
         }
     }
 
-    private static void dumpList(String label, JCoParameterList list) {
-        System.out.println(label + "_COUNT=" + (list == null ? 0 : list.getFieldCount()));
+    private static void dumpList(String label, Object list) throws ReflectiveOperationException {
         if (list == null) {
+            System.out.println(label + "_COUNT=0");
             return;
         }
-        JCoMetaData metaData = list.getMetaData();
-        for (int i = 0; i < list.getFieldCount(); i++) {
-            System.out.println(label + "_PARAM name=" + metaData.getName(i)
-                + " type=" + metaData.getTypeAsString(i)
-                + " len=" + metaData.getLength(i)
-                + " decimals=" + metaData.getDecimals(i));
+
+        Method getFieldCount = list.getClass().getMethod("getFieldCount");
+        int fieldCount = (Integer) getFieldCount.invoke(list);
+        System.out.println(label + "_COUNT=" + fieldCount);
+
+        Object metaData = list.getClass().getMethod("getMetaData").invoke(list);
+        for (int i = 0; i < fieldCount; i++) {
+            System.out.println(label + "_PARAM name=" + invoke(metaData, "getName", i)
+                + " type=" + invoke(metaData, "getTypeAsString", i)
+                + " len=" + invoke(metaData, "getLength", i)
+                + " decimals=" + invoke(metaData, "getDecimals", i));
         }
-        for (JCoField field : list) {
-            if (field.isTable()) {
-                JCoTable table = field.getTable();
-                System.out.println(label + "_TABLE " + field.getName() + " rows=" + table.getNumRows());
+
+        for (Object field : toIterable(list)) {
+            boolean isTable = (Boolean) field.getClass().getMethod("isTable").invoke(field);
+            if (isTable) {
+                Object table = field.getClass().getMethod("getTable").invoke(field);
+                System.out.println(label + "_TABLE " + field.getClass().getMethod("getName").invoke(field)
+                    + " rows=" + table.getClass().getMethod("getNumRows").invoke(table));
             }
         }
     }
 
-    static class InMemoryDestinationDataProvider implements DestinationDataProvider {
+    private static Object invoke(Object target, String methodName, int index)
+        throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        return target.getClass().getMethod(methodName, int.class).invoke(target, index);
+    }
+
+    private static Iterable<Object> toIterable(Object target) {
+        if (target instanceof Iterable<?> iterable) {
+            return () -> (java.util.Iterator<Object>) iterable.iterator();
+        }
+
+        if (target.getClass().isArray()) {
+            return () -> new java.util.Iterator<>() {
+                private int index;
+
+                @Override
+                public boolean hasNext() {
+                    return index < Array.getLength(target);
+                }
+
+                @Override
+                public Object next() {
+                    return Array.get(target, index++);
+                }
+            };
+        }
+
+        throw new IllegalStateException("Parameter list is not iterable: " + target.getClass().getName());
+    }
+
+    static class InMemoryDestinationDataProvider {
         private final String name;
         private final Properties props;
+        private final Object proxyInstance;
 
-        InMemoryDestinationDataProvider(String name, Properties props) {
+        InMemoryDestinationDataProvider(
+            Class<?> destinationDataProvider,
+            Class<?> environment,
+            String name,
+            Properties props
+        ) throws ReflectiveOperationException {
             this.name = name;
             this.props = props;
-            Environment.registerDestinationDataProvider(this);
-        }
-
-        @Override
-        public Properties getDestinationProperties(String destinationName) {
-            return name.equals(destinationName) ? props : null;
-        }
-
-        @Override
-        public void setDestinationDataEventListener(DestinationDataEventListener listener) {}
-
-        @Override
-        public boolean supportsEvents() {
-            return false;
+            this.proxyInstance = java.lang.reflect.Proxy.newProxyInstance(
+                destinationDataProvider.getClassLoader(),
+                new Class<?>[] {destinationDataProvider},
+                (proxy, method, args) -> switch (method.getName()) {
+                    case "getDestinationProperties" -> name.equals(args[0]) ? props : null;
+                    case "setDestinationDataEventListener" -> null;
+                    case "supportsEvents" -> false;
+                    default -> throw new UnsupportedOperationException(method.getName());
+                }
+            );
+            environment.getMethod("registerDestinationDataProvider", destinationDataProvider).invoke(null, proxyInstance);
         }
     }
 }
