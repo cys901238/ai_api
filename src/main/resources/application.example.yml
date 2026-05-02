@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: ai_api
+
+bridge:
+  program-id: YOUR_PROGRAM_ID
+  gateway-host: YOUR_SAP_GATEWAY_HOST
+  gateway-service: sapgw00
+  repository-destination: YOUR_REPOSITORY_DESTINATION
+  open-ai-model: gpt-4.1-mini
+  connect-timeout-ms: 3000
+  read-timeout-ms: 10000

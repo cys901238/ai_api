@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "planning_assistant_response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["summary", "suggestions"],
+  "properties": {
+    "summary": {
+      "type": "string"
+    },
+    "suggestions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["lineNo", "actionType", "reasonCode", "reasonText", "confidence"],
+        "properties": {
+          "lineNo": { "type": "integer" },
+          "actionType": { "type": "string", "enum": ["KEEP", "MOVE", "SPLIT", "INCREASE_UPH", "DECREASE_QTY"] },
+          "seqnr": { "type": ["string", "null"] },
+          "targetShift": { "type": ["string", "null"] },
+          "targetQty": { "type": ["number", "null"] },
+          "targetUph": { "type": ["number", "null"] },
+          "reasonCode": { "type": "string" },
+          "reasonText": { "type": "string" },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+        }
+      }
+    },
+    "risks": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}
